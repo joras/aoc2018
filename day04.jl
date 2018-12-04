@@ -5,7 +5,7 @@ function sleepmap(input)
     sleepEnd = nothing
 
     for actionRow in sort(collect(input), by=x->x[1])
-        _, (hours, minutes), action = actionRow.second
+        minutes, action = actionRow.second
 
         if startswith(action, "Guard")
             m = match(r"Guard #(\d+) begins shift", action)
@@ -26,7 +26,7 @@ function sleepmap(input)
             sleepStart = nothing
             sleepEnd = nothing
 
-        elseif startswith(action, "wakes") && hours == 0
+        elseif startswith(action, "wakes")
             sleepEnd = minutes
             sleepStat = sleepminutes[currGuard]
 
@@ -34,7 +34,7 @@ function sleepmap(input)
             for min in sleepStart+1:sleepEnd
                 sleepStat[min] = sleepStat[min] + 1
             end
-        elseif startswith(action, "falls") && hours == 0
+        elseif startswith(action, "falls")
             sleepStart = minutes
             sleepEnd = nothing
         end
@@ -66,12 +66,10 @@ function solution2(sleepmap)
     sleepy[1] * (sleepy[2][2] - 1)
 end
 
-
-
 actions = Dict()
 for row in readlines("day04.txt")
-    m = match(r"\[((.+) (.+):(.+))\] (.+)", row)
-    actions[m[1]] = (m[1], (parse(Int8,m[3]), parse(Int8,m[4])), m[5])
+    m = match(r"\[((.+) .+:(.+))\] (.+)", row)
+    actions[m[1]] = (parse(Int8,m[3]), m[4])
 end
 
 sleeps = sleepmap(actions)
