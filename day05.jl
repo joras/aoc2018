@@ -25,7 +25,7 @@ function solution2(input)
 
     for char in 'a':'z'
         filtered = filter(x->x!=char && x!=char-32, input)
-        push!(lengths, length(solution1(filtered)) )
+        push!(lengths, length(react(filtered)) )
     end
 
     minimum(lengths)
@@ -34,5 +34,5 @@ end
 @test react("dabAcCaCcCaABAcCcaDA") == "dabCBAcaDA"#
 
 data = readline("day05.txt")
-println("Solution1: ", @time length(react(data)))
-println("Solution1: ", @time solution2(data))
+println("Solution 1: ", @time length(react(data)))
+println("Solution 2: ", @time solution2(data))
