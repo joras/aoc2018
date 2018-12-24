@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from functools import reduce
+from PIL import Image, ImageDraw
 
 
 @dataclass
@@ -16,13 +16,12 @@ def loadFile(filename):
     carts = []
 
     for y, line in enumerate(open(filename).readlines()):
-        # for char in line:
         curLine = []
         for x, char in enumerate(line.strip('\n')):
             cartChar = "<>v^"
             if char in cartChar:
                 carts.append(Cart(char, x, y, 0, False))
-                curLine.append("--||"[cartChar.find(cartChar)])
+                curLine.append("--||"[cartChar.find(char)])
             else:
                 curLine.append(char)
 
@@ -92,13 +91,79 @@ def moveCarts(grid, carts):
     return crashes, carts
 
 
+
+def renderImage(grid, carts, crashes):
+    cell_size = 5
+    w, h = len(grid[0]), len(grid)
+    img = Image.new('RGBA', (w*cell_size, h*cell_size), (255, 255, 255, 255))
+    draw = ImageDraw.Draw(img)
+
+    track_color = (100, 100, 100, 255)
+
+    for y, line in enumerate(grid):
+        for x, char in enumerate(line):
+            #    print(y, x)
+            gx = x*cell_size
+            gy = y*cell_size
+
+            if char == '|':
+                draw.line([(gx+2, gy), (gx+2, gy+4)], track_color)
+            elif char == '-':
+                draw.line([(gx, gy+2), (gx+4, gy+2)], track_color)
+            elif char == '/':
+                if y < h-1 and grid[y+1][x] in "|+":
+                    draw.line([(gx+2, gy+4), (gx+2, gy+2), (gx+4, gy+2)],
+                              track_color)
+                if y > 0 and grid[y-1][x] in "|+":
+                    draw.line([(gx, gy+2), (gx+2, gy+2), (gx+2, gy)],
+                              track_color)
+            elif char == '\\':
+                if y < h-1 and grid[y+1][x] in '|+':
+                    draw.line([(gx, gy+2), (gx+2, gy+2), (gx+2, gy+4)],
+                              track_color)
+                if y > 0 and grid[y-1][x] in '|+':
+                    draw.line([(gx+2, gy), (gx+2, gy+2), (gx+4, gy+2)],
+                              track_color)
+
+            elif char == '+':
+                draw.line([(gx+2, gy), (gx+2, gy+4)], track_color)
+                draw.line([(gx, gy+2), (gx+4, gy+2)], track_color)
+
+    for cart in crashes:
+        gx, gy = cart.x*cell_size, cart.y*cell_size
+        draw.rectangle([(gx+1, gy+1),
+                        (gx+3, gy+3)], (200, 100, 100, 255))
+        draw.line([(gx, gy), (gx+4, gy+4)], (200, 100, 100, 255))
+        draw.line([(gx+4, gy), (gx, gy+4)], (200, 100, 100, 255))
+
+    for cart in carts:
+        draw.rectangle([(cart.x*cell_size+1, cart.y*cell_size+1),
+                        (cart.x*cell_size+3, cart.y*cell_size+3)], (100, 100, 250, 255))
+
+    return img
+
+
 grid, carts = loadFile("day13.txt")
 
+
+printNetwork(grid, carts)
+img = renderImage(grid, carts, [])
+img.show()
+
+allCrashes = []
+i = 0
 while True:
     crashes, carts = moveCarts(grid, carts)
+    allCrashes.extend(crashes)
+    img = renderImage(grid, carts, allCrashes)
+    img.save(f"animation/frame{i:06}.png")
+    i += 1
 
     if len(carts) == 1:
         print("Last Cart: ", carts[0])
         break
     if crashes:
+        img.show()
         print("Crashes: ", crashes)
+
+    img.close()
